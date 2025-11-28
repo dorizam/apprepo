@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. SSH로 EC2에 파일 복사
+      # 2. EC2에 파일 upload
       - name: upload project to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
