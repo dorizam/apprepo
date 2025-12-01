@@ -52,3 +52,8 @@ jobs:
           key_path: private_key.pem
           script: echo "SSH connection successful"
 
+      - name: Check secrets
+        run: |
+          echo "HOST: ${{ secrets.EC2_HOST }}"
+          echo "USER: ${{ secrets.EC2_USER }}"
+
