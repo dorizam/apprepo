@@ -13,10 +13,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. SSH 키 파일로 저장
+      # 2. SSH 키 파일로 저장 (줄바꿈 유지)
       - name: Save SSH private key
         run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > private_key.pem
+          printf "%s\n" "${{ secrets.EC2_SSH_KEY }}" > private_key.pem
           chmod 600 private_key.pem
 
       # 3. 프로젝트 파일 EC2로 업로드
