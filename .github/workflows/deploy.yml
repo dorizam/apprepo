@@ -8,7 +8,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-      # 1. 코드 checkout
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,17 +22,16 @@ jobs:
           echo "HOST: ${{ secrets.EC2_HOST }}"
           echo "USER: ${{ secrets.EC2_USER }}"
 
-     # 2. 파일업로드 기능 추가로 변경
       - name: Upload project to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key_path: private_key.pem
-          source: "./!(private_key.pem)"
-          target: "${{ secrets.APP_PATH }}/"    
-    
-      # 3. SSH로 EC2에서 빌드 및 서버 재시작
+          source: "./*"
+          target: "${{ secrets.APP_PATH }}/"
+          exclude: "private_key.pem"
+
       - name: SSH and build/start Next.js
         uses: appleboy/ssh-action@v0.1.5
         with:
@@ -46,6 +44,4 @@ jobs:
             npm run build
             pm2 stop all || true
             pm2 start npm --name "nextjs" -- start
-
-
 
