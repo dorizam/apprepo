@@ -8,38 +8,35 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    # 1. 코드 checkout
     steps:
+      # 1. 코드 체크아웃
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. SSH 개인 키 생성 및 권한 설정
       - name: Save SSH private key
         run: |
           printf "%s\n" "${{ secrets.EC2_SSH_KEY }}" > private_key.pem
           chmod 600 private_key.pem
 
+      # 3. 시크릿 확인용 (선택)
       - name: Check secrets
         run: |
           echo "HOST: ${{ secrets.EC2_HOST }}"
           echo "USER: ${{ secrets.EC2_USER }}"
+          echo "EC2_PATH: ${{ secrets.EC2_PATH }}"
 
-      # 2. 파일업로드 기능
+      # 4. 프로젝트 파일 EC2로 업로드 (pem 키 제외)
       - name: Upload project to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key_path: private_key.pem
-          source: |
-            package.json
-            package-lock.json
-            public/
-            pages/
-            .next/
-            styles/
-          target: "${{ secrets.APP_PATH }}/"
+          source: "./!(.github/workflows/private_key.pem)"
+          target: "${{ secrets.EC2_PATH }}/"
 
-      # 3. SSH로 EC2에서 빌드 및 서버 재시작
+      # 5. SSH로 EC2 접속 후 빌드 및 서버 재시작
       - name: SSH and build/start Next.js
         uses: appleboy/ssh-action@v0.1.5
         with:
@@ -47,7 +44,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key_path: private_key.pem
           script: |
-            cd ${{ secrets.APP_PATH }}
+            cd ${{ secrets.EC2_PATH }}
             npm install
             npm run build
             pm2 stop all || true
