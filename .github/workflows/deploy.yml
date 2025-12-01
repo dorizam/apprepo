@@ -9,42 +9,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 레포지토리 체크아웃
+      # 1. 코드 checkout
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. SSH private key 생성 및 권한 설정
-      - name: Save SSH private key
-        run: |
-          mkdir -p .github/workflows
-          printf "%s\n" "${{ secrets.EC2_SSH_KEY }}" > .github/workflows/private_key.pem
-          chmod 600 .github/workflows/private_key.pem
-
-      # 3. 시크릿 확인 (선택)
+      # 2. 시크릿 확인용 (선택)
       - name: Check secrets
         run: |
           echo "HOST: ${{ secrets.EC2_HOST }}"
           echo "USER: ${{ secrets.EC2_USER }}"
           echo "TARGET PATH: ${{ secrets.EC2_PATH }}"
 
-      # 4. 프로젝트 파일 EC2로 업로드 (rsync)
+      # 3. 프로젝트 파일 EC2로 업로드 (rsync 사용)
       - name: Upload project to EC2
         run: |
-          rsync -avz --exclude='.github/workflows/private_key.pem' --exclude='.git/' ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_PATH }}/
-        env:
-          RSYNC_RSH: "ssh -i .github/workflows/private_key.pem -o StrictHostKeyChecking=no"
+          rsync -avz ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_PATH }}/
 
-      # 5. EC2에서 빌드 및 서버 재시작
+      # 4. SSH로 EC2 접속 후 빌드 및 서버 재시작
       - name: SSH and build/start Next.js
-        uses: appleboy/ssh-action@v0.1.5
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key_path: .github/workflows/private_key.pem
-          script: |
+        run: |
+          ssh -i ~/.ssh/kys-key-canada.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd ${{ secrets.EC2_PATH }}
             npm install
             npm run build
             pm2 stop all || true
             pm2 start npm --name "nextjs" -- start
+          EOF
 
