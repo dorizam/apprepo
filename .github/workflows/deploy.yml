@@ -17,6 +17,11 @@ jobs:
           printf "%s\n" "${{ secrets.EC2_SSH_KEY }}" > private_key.pem
           chmod 600 private_key.pem
 
+      - name: Check secrets
+        run: |
+          echo "HOST: ${{ secrets.EC2_HOST }}"
+          echo "USER: ${{ secrets.EC2_USER }}"
+
       - name: Upload project to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -38,9 +43,4 @@ jobs:
             npm run build
             pm2 stop all || true
             pm2 start npm --name "nextjs" -- start
-
-      - name: Check secrets
-        run: |
-          echo "HOST: ${{ secrets.EC2_HOST }}"
-          echo "USER: ${{ secrets.EC2_USER }}"
 
