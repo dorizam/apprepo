@@ -26,15 +26,12 @@ jobs:
           echo "USER: ${{ secrets.EC2_USER }}"
           echo "EC2_PATH: ${{ secrets.EC2_PATH }}"
 
-      # 4. 프로젝트 파일 EC2로 업로드 (pem 키 제외)
-      - name: Upload project to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key_path: private_key.pem
-          source: "./!(.github/workflows/private_key.pem)"
-          target: "${{ secrets.EC2_PATH }}/"
+      # 4. rsync로 프로젝트 파일 EC2로 업로드 (.pem 제외)
+      - name: Upload project to EC2 via rsync
+        run: |
+          rsync -avz --exclude='private_key.pem' --exclude='.git/' ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_PATH }}/
+        env:
+          RSYNC_RSH: "ssh -i private_key.pem -o StrictHostKeyChecking=no"
 
       # 5. SSH로 EC2 접속 후 빌드 및 서버 재시작
       - name: SSH and build/start Next.js
